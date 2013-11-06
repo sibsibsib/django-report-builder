@@ -16,6 +16,7 @@ from django.utils.decorators import method_decorator
 from django.views.generic.edit import CreateView, UpdateView
 from django.views.generic import ListView
 from django import forms
+from django.utils.translation import ugettext_lazy as _
 
 import datetime
 import inspect
@@ -41,7 +42,7 @@ class ReportEditForm(forms.ModelForm):
             'description': forms.TextInput(
                 attrs={'style': 'width:99%;', 'placeholder': 'Description'}),
         }
-    
+
 class DisplayFieldForm(forms.ModelForm):
     class Meta:
         model = DisplayField
@@ -54,7 +55,7 @@ class DisplayFieldForm(forms.ModelForm):
             'total': forms.CheckboxInput(attrs={'class':'small_input'}),
             'sort': forms.TextInput(attrs={'class':'small_input'}),
         }
-        
+
 
 class FilterFieldForm(forms.ModelForm):
     class Meta:
@@ -81,7 +82,7 @@ class FilterFieldForm(forms.ModelForm):
 class ReportCreateView(CreateView):
     form_class = ReportForm
     template_name = 'report_new.html'
-    
+
 
 def get_relation_fields_from_model(model_class):
     relation_fields = []
@@ -131,7 +132,7 @@ def get_properties_from_model(model_class):
 def filter_property(filter_field, value):
     filter_type = filter_field.filter_type
     filter_value = filter_field.filter_value
-    filtered = True 
+    filtered = True
     #TODO: i10n
     WEEKDAY_INTS = {
         'monday': 0,
@@ -157,8 +158,8 @@ def filter_property(filter_field, value):
         if filter_type == 'in' and value in filter_value:
             filtered = False
         # convert dates and datetimes to timestamps in order to compare digits and date/times the same
-        if isinstance(value, datetime.datetime) or isinstance(value, datetime.date): 
-            value = str(time.mktime(value.timetuple())) 
+        if isinstance(value, datetime.datetime) or isinstance(value, datetime.date):
+            value = str(time.mktime(value.timetuple()))
             try:
                 filter_value_dt = parser.parse(filter_value)
                 filter_value = str(time.mktime(filter_value_dt.timetuple()))
@@ -195,9 +196,9 @@ def filter_property(filter_field, value):
 
     if filter_field.exclude:
         return not filtered
-    return filtered 
+    return filtered
 
-            
+
 @staff_member_required
 def ajax_get_related(request):
     """ Get related model and fields
@@ -209,24 +210,24 @@ def ajax_get_related(request):
     field = model._meta.get_field_by_name(field_name)
     path = request.GET['path']
     path_verbose = request.GET['path_verbose']
-    
+
     if field[2]:
         # Direct field
         new_model = field[0].related.parent_model()
     else:
         # Indirect related field
         new_model = field[0].model()
-    
+
     new_fields = get_relation_fields_from_model(new_model)
     model_ct = ContentType.objects.get_for_model(new_model)
 
     if path_verbose:
         path_verbose += "::"
     path_verbose += field[0].name
-    
+
     path += field_name
     path += '__'
-    
+
     return render_to_response('report_builder/report_form_related_li.html', {
         'model_ct': model_ct,
         'related_fields': new_fields,
@@ -255,7 +256,7 @@ def ajax_get_fields(request):
             'root_model': root_model,
             'app_label': app_label,
         }, RequestContext(request, {}),)
-    
+
     field = model._meta.get_field_by_name(field_name)
     if path_verbose:
         path_verbose += "::"
@@ -265,9 +266,9 @@ def ajax_get_fields(request):
         path_verbose += field[0].m2m_reverse_field_name()
     else:
         path_verbose += field[0].name
-    
+
     path += field_name
-    path += '__' 
+    path += '__'
     if field[2]:
         # Direct field
         new_model = field[0].related.parent_model
@@ -276,7 +277,7 @@ def ajax_get_fields(request):
         # Indirect related field
         new_model = field[0].model
         path_verbose = new_model.__name__.lower()
-   
+
     fields = get_direct_fields_from_model(new_model)
     if hasattr(new_model, 'report_builder_exclude_fields'):
         good_fields = []
@@ -285,11 +286,11 @@ def ajax_get_fields(request):
                 good_fields += [field]
         fields = good_fields
 
-    
+
     custom_fields = get_custom_fields_from_model(new_model)
     properties = get_properties_from_model(new_model)
     app_label = new_model._meta.app_label
-    
+
     return render_to_response('report_builder/report_form_fields_li.html', {
         'fields': fields,
         'custom_fields': custom_fields,
@@ -297,7 +298,7 @@ def ajax_get_fields(request):
         'path': path,
         'path_verbose': path_verbose,
         'root_model': root_model,
-        'app_label': app_label,        
+        'app_label': app_label,
     }, RequestContext(request, {}),)
 
 @staff_member_required
@@ -326,7 +327,7 @@ def sort_helper(x, sort_key, date_field=False):
     if date_field and x[sort_key] == None:
         result = datetime.date(datetime.MINYEAR, 1, 1)
     else:
-        result = x[sort_key]     
+        result = x[sort_key]
     return result.lower() if isinstance(result, basestring) else result
 
 def report_to_list(report, user, preview=False, queryset=None):
@@ -368,10 +369,10 @@ def report_to_list(report, user, preview=False, queryset=None):
             # TODO: clean this up a bit
             display_field_key = display_field.path + display_field.field
             if '[property]' in display_field.field_verbose:
-                property_list[i] = display_field_key 
+                property_list[i] = display_field_key
                 append_display_total(display_totals, display_field, display_field_key)
             elif '[custom' in display_field.field_verbose:
-                custom_list[i] = display_field_key 
+                custom_list[i] = display_field_key
                 append_display_total(display_totals, display_field, display_field_key)
             elif display_field.aggregate == "Avg":
                 display_field_key += '__avg'
@@ -412,7 +413,7 @@ def report_to_list(report, user, preview=False, queryset=None):
                         display_totals[display_field_key]['val'] += Decimal('1.00')
 
 
-            # get pk for primary and m2m relations in order to retrieve objects 
+            # get pk for primary and m2m relations in order to retrieve objects
             # for adding properties to report rows
             display_field_paths.insert(0, 'pk')
             m2m_relations = []
@@ -425,7 +426,7 @@ def report_to_list(report, user, preview=False, queryset=None):
                     m2m_relations.append(property_root)
             values_and_properties_list = []
             filtered_report_rows = []
-            group = None 
+            group = None
             for df in report.displayfield_set.all():
                 if df.group:
                     group = df.path + df.field
@@ -435,10 +436,10 @@ def report_to_list(report, user, preview=False, queryset=None):
             else:
                 values_list = objects.values_list(*display_field_paths)
 
-            if not group: 
+            if not group:
                 for row in values_list:
                     row = list(row)
-                    obj = report.root_model.model_class().objects.get(pk=row.pop(0)) 
+                    obj = report.root_model.model_class().objects.get(pk=row.pop(0))
                     #related_objects
                     remove_row = False
                     values_and_properties_list.append(row)
@@ -446,9 +447,9 @@ def report_to_list(report, user, preview=False, queryset=None):
                     property_filters = report.filterfield_set.filter(
                         Q(field_verbose__contains='[property]') | Q(field_verbose__contains='[custom')
                         )
-                    for property_filter in property_filters: 
+                    for property_filter in property_filters:
                         root_relation = property_filter.path.split('__')[0]
-                        if root_relation in m2m_relations: 
+                        if root_relation in m2m_relations:
                             pk = row[0]
                             if pk is not None:
                                 # a related object exists
@@ -473,10 +474,10 @@ def report_to_list(report, user, preview=False, queryset=None):
                         for i, field in enumerate(display_field_paths[1:]):
                             if field in display_totals.keys():
                                 increment_total(field, display_totals, row[i])
-                        for position, display_property in property_list.iteritems(): 
+                        for position, display_property in property_list.iteritems():
                             relations = display_property.split('__')
                             root_relation = relations[0]
-                            if root_relation in m2m_relations: 
+                            if root_relation in m2m_relations:
                                 pk = row.pop(0)
                                 if pk is not None:
                                     # a related object exists
@@ -491,7 +492,7 @@ def report_to_list(report, user, preview=False, queryset=None):
                                     val = None
                             values_and_properties_list[-1].insert(position, val)
                             increment_total(display_property, display_totals, val)
-                        for position, display_custom in custom_list.iteritems(): 
+                        for position, display_custom in custom_list.iteritems():
                             val = obj.get_custom_value(display_custom)
                             values_and_properties_list[-1].insert(position, val)
                             increment_total(display_custom, display_totals, val)
@@ -520,8 +521,8 @@ def report_to_list(report, user, preview=False, queryset=None):
 
 
         # add choice list display and display field formatting
-        choice_lists = {} 
-        display_formats = {} 
+        choice_lists = {}
+        display_formats = {}
         final_list = []
         for df in report.displayfield_set.all():
             if df.choices:
@@ -529,13 +530,13 @@ def report_to_list(report, user, preview=False, queryset=None):
                 # Insert blank and None as valid choices
                 df_choices[''] = ''
                 df_choices[None] = ''
-                choice_lists.update({df.position: df_choices}) 
+                choice_lists.update({df.position: df_choices})
             if df.display_format:
                 display_formats.update({df.position: df.display_format})
 
         for row in values_and_properties_list:
             # add display totals for grouped result sets
-            # TODO: dry this up, duplicated logic in non-grouped total routine 
+            # TODO: dry this up, duplicated logic in non-grouped total routine
             if group:
                 # increment totals for fields
                 for i, field in enumerate(display_field_paths[1:]):
@@ -562,11 +563,11 @@ def report_to_list(report, user, preview=False, queryset=None):
 
         if display_totals:
             display_totals_row = []
-            
+
             fields_and_properties = list(display_field_paths[1:])
-            for position, value in property_list.iteritems(): 
+            for position, value in property_list.iteritems():
                 fields_and_properties.insert(position, value)
-            for i, field in enumerate(fields_and_properties): 
+            for i, field in enumerate(fields_and_properties):
                 if field in display_totals.keys():
                     display_totals_row += [display_totals[field]['val']]
                 else:
@@ -589,7 +590,7 @@ def report_to_list(report, user, preview=False, queryset=None):
                     ] + [display_totals_row]
                 )
 
-                
+
 
     except exceptions.FieldError:
         message += "Field Error. If you are using the report builder then you found a bug!"
@@ -597,7 +598,7 @@ def report_to_list(report, user, preview=False, queryset=None):
         values_and_properties_list = None
 
     return values_and_properties_list, message
-    
+
 @staff_member_required
 def ajax_preview(request):
     """ This view is intended for a quick preview useful when debugging
@@ -605,12 +606,12 @@ def ajax_preview(request):
     """
     report = get_object_or_404(Report, pk=request.POST['report_id'])
     objects_list, message = report_to_list(report, request.user, preview=True)
-    
+
     return render_to_response('report_builder/html_report.html', {
         'report': report,
         'objects_dict': objects_list,
         'message': message
-        
+
     }, RequestContext(request, {}),)
 
 class ReportUpdateView(UpdateView):
@@ -620,7 +621,7 @@ class ReportUpdateView(UpdateView):
     model = Report
     form_class = ReportEditForm
     success_url = './'
-    
+
     @method_decorator(permission_required('report_builder.change_report'))
     def dispatch(self, request, *args, **kwargs):
         return super(ReportUpdateView, self).dispatch(request, *args, **kwargs)
@@ -634,28 +635,28 @@ class ReportUpdateView(UpdateView):
 
         direct_fields = get_direct_fields_from_model(model_class)
         relation_fields = get_relation_fields_from_model(model_class)
-        
+
         DisplayFieldFormset = inlineformset_factory(
             Report,
             DisplayField,
             extra=0,
             can_delete=True,
             form=DisplayFieldForm)
-        
+
         FilterFieldFormset = inlineformset_factory(
             Report,
             FilterField,
             extra=0,
             can_delete=True,
             form=FilterFieldForm)
-        
+
         if self.request.POST:
             ctx['field_list_formset'] =  DisplayFieldFormset(self.request.POST, instance=self.object)
             ctx['field_filter_formset'] =  FilterFieldFormset(self.request.POST, instance=self.object, prefix="fil")
         else:
             ctx['field_list_formset'] =  DisplayFieldFormset(instance=self.object)
             ctx['field_filter_formset'] =  FilterFieldFormset(instance=self.object, prefix="fil")
-        
+
         ctx['related_fields'] = relation_fields
         ctx['fields'] = direct_fields
         ctx['custom_fields'] = custom_fields
@@ -663,14 +664,15 @@ class ReportUpdateView(UpdateView):
         ctx['model_ct'] = model_ct
         ctx['root_model'] = model_ct.model
         ctx['app_label'] = model_ct.app_label
-        
+        ctx['title'] = _('Report Builder')
+
         return ctx
 
     def form_valid(self, form):
         context = self.get_context_data()
         field_list_formset = context['field_list_formset']
         field_filter_formset = context['field_filter_formset']
-        
+
         if field_list_formset.is_valid() and field_filter_formset.is_valid():
             self.object = form.save()
             field_list_formset.report = self.object
@@ -681,11 +683,11 @@ class ReportUpdateView(UpdateView):
             return HttpResponseRedirect(self.get_success_url())
         else:
             return self.render_to_response(self.get_context_data(form=form))
-        
+
 @staff_member_required
 def download_xlsx(request, pk, queryset=None):
     """ Download the full report in xlsx format
-    Why xlsx? Because there is no decent ods library for python and xls has limitations 
+    Why xlsx? Because there is no decent ods library for python and xls has limitations
     queryset: predefined queryset to bypass filters
     """
     import cStringIO as StringIO
@@ -695,12 +697,12 @@ def download_xlsx(request, pk, queryset=None):
     import re
 
     report = get_object_or_404(Report, pk=pk)
-    
+
     wb = Workbook()
     ws = wb.worksheets[0]
     ws.title = report.name[:30]
     filename = re.sub(r'\W+', '', report.name) + '.xlsx'
-    
+
     i = 0
     for field in report.displayfield_set.all():
         cell = ws.cell(row=0, column=i)
@@ -708,7 +710,7 @@ def download_xlsx(request, pk, queryset=None):
         cell.style.font.bold = True
         ws.column_dimensions[get_column_letter(i+1)].width = field.width
         i += 1
-    
+
     objects_list, message = report_to_list(report, request.user, queryset=queryset)
     for row in objects_list:
         try:
@@ -717,7 +719,7 @@ def download_xlsx(request, pk, queryset=None):
             ws.append([e.message])
         except:
             ws.append(['Unknown Error'])
-    
+
     myfile = StringIO.StringIO()
     myfile.write(save_virtual_workbook(wb))
     response = HttpResponse(
@@ -726,7 +728,7 @@ def download_xlsx(request, pk, queryset=None):
     response['Content-Disposition'] = 'attachment; filename=%s' % filename
     response['Content-Length'] = myfile.tell()
     return response
-    
+
 
 @staff_member_required
 def ajax_add_star(request, pk):
@@ -741,7 +743,7 @@ def ajax_add_star(request, pk):
         added = True
         report.starred.add(request.user)
     return HttpResponse(added)
-    
+
 @staff_member_required
 def create_copy(request, pk):
     """ Copy a report including related fields """
@@ -768,7 +770,7 @@ def create_copy(request, pk):
 @staff_member_required
 def export_to_report(request):
     """ Export objects (by ID and content type) to an existing or new report
-    In effect this runs the report with it's display fields. It ignores 
+    In effect this runs the report with it's display fields. It ignores
     filters and filters instead the provided ID's. It can be select
     as a global admin action.
     """
@@ -777,12 +779,12 @@ def export_to_report(request):
     ids = request.GET['ids'].split(',')
     number_objects = len(ids)
     reports = Report.objects.filter(root_model=ct).order_by('-modified')
-    
+
     if 'download' in request.GET:
         report = get_object_or_404(Report, pk=request.GET['download'])
         queryset = ct.model_class().objects.filter(pk__in=ids)
         return download_xlsx(request, report.id, queryset=queryset)
-    
+
     return render(request, 'report_builder/export_to_report.html', {
         'object_list': reports,
         'admin_url': admin_url,
