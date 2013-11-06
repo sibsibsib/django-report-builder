@@ -1,5 +1,12 @@
-{% block header %}
+{% extends "admin/base_site.html" %}
+
+{% block breadcrumbs %}
+<div class="breadcrumbs">
+    <a href="{% url 'admin:index' %}">Home </a> &rsaquo; <a href="{% url 'admin:report_builder_report_changelist' %}">Reports</a>
+    {% block breadcrumbs_extra %}{% endblock %}
+</div>
 {% endblock %}
 
-{% block content %}
-{% endblock %}
+<div style="height:590px;">
+{% block content %}{% endblock %}
+</div>
