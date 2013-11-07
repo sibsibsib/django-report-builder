@@ -9,10 +9,13 @@ from django.conf import settings
 
 static_url = getattr(settings, 'STATIC_URL', '/static/')
 
+
 class DisplayFieldForm(forms.ModelForm):
     position = forms.IntegerField(widget=forms.HiddenInput, required=False)
+
     class Meta:
         model = DisplayField
+
 
 class DisplayFieldInline(admin.StackedInline):
     model = DisplayField
@@ -20,32 +23,48 @@ class DisplayFieldInline(admin.StackedInline):
     extra = 0
     sortable_field_name = "position"
 
+
 class FilterFieldForm(forms.ModelForm):
     position = forms.IntegerField(widget=forms.HiddenInput)
+
     class Meta:
         model = FilterField
+
 
 class FilterFieldInline(admin.StackedInline):
     model = FilterField
     form = FilterFieldForm
     extra = 0
     sortable_field_name = "position"
-    
-    
+
+
 class StarredFilter(SimpleListFilter):
     title = 'Your starred reports'
     parameter_name = 'starred'
+
     def lookups(self, request, model_admin):
         return (
             ('Starred', 'Starred Reports'),
         )
+
     def queryset(self, request, queryset):
         if self.value() == 'Starred':
             return queryset.filter(starred=request.user)
 
 
 class ReportAdmin(admin.ModelAdmin):
-    list_display = ('ajax_starred', 'edit', 'name', 'description', 'root_model', 'created', 'modified', 'user_created', 'download_xlsx','copy_report',)
+    list_display = (
+        'ajax_starred',
+        'edit',
+        'name',
+        'description',
+        'root_model',
+        'created',
+        'modified',
+        'user_created',
+        'download_xlsx',
+        'copy_report',
+    )
     readonly_fields = ['slug']
     fields = ['name', 'description', 'root_model', 'slug']
     search_fields = ('name', 'description')
@@ -53,33 +72,38 @@ class ReportAdmin(admin.ModelAdmin):
     list_display_links = []
 
     class Media:
-        js = [ static_url+'report_builder/js/jquery-1.8.2.min.js', static_url+'report_builder/js/report_list.js',]
+        js = (
+            static_url + 'report_builder/js/jquery-1.8.2.min.js',
+            static_url + 'report_builder/js/report_list.js',
+        )
 
     def response_add(self, request, obj, post_url_continue=None):
         if '_easy' in request.POST:
             return HttpResponseRedirect(obj.get_absolute_url())
         return super(ReportAdmin, self).response_add(request, obj, post_url_continue)
-    
+
     def response_change(self, request, obj):
         if '_easy' in request.POST:
             return HttpResponseRedirect(obj.get_absolute_url())
         return super(ReportAdmin, self).response_change(request, obj)
-        
+
     def changelist_view(self, request, extra_context=None):
         self.user = request.user
         return super(ReportAdmin, self).changelist_view(request, extra_context=extra_context)
-    
+
     def ajax_starred(self, obj):
         if obj.starred.filter(id=self.user.id):
-            img = static_url+'report_builder/img/star.png'
+            img = static_url + 'report_builder/img/star.png'
         else:
-            img = static_url+'report_builder/img/unstar.png'
+            img = static_url + 'report_builder/img/unstar.png'
+
         return '<a href="javascript:void(0)" onclick="ajax_add_star(this, \'{0}\')"><img style="width: 26px; margin: -6px;" src="{1}"/></a>'.format(
             reverse('report_builder.views.ajax_add_star', args=[obj.id]),
             img)
+
     ajax_starred.allow_tags = True
     ajax_starred.short_description = "Starred"
-    
+
     def save_model(self, request, obj, form, change):
         star_user = False
         if not obj.id:
@@ -87,11 +111,12 @@ class ReportAdmin(admin.ModelAdmin):
             star_user = True
         obj.user_modified = request.user
         obj.save()
-        if star_user: # Star created reports automatically
+        if star_user:  # Star created reports automatically
             obj.starred.add(request.user)
-    
+
 admin.site.register(Report, ReportAdmin)
 admin.site.register(Format)
+
 
 def export_to_report(modeladmin, request, queryset):
     admin_url = request.get_full_path()
