@@ -22,69 +22,10 @@ from django.template import RequestContext
 from django.utils.decorators import method_decorator
 from django.utils.translation import ugettext_lazy as _
 from django.views.generic.edit import CreateView, UpdateView
+
 from report_builder.models import Report, DisplayField, FilterField, Format
-from report_builder.utils import javascript_date_format, duplicate, get_model_from_path_string
-
-
-class ReportForm(forms.ModelForm):
-    class Meta:
-        model = Report
-        fields = (
-            'name',
-            'distinct',
-            'root_model',
-        )
-
-
-class ReportEditForm(forms.ModelForm):
-    class Meta:
-        model = Report
-        fields = (
-            'name',
-            'distinct',
-            'description',
-        )
-        widgets = {
-            'description': forms.TextInput(
-                attrs={'style': 'width:99%;', 'placeholder': 'Description'}),
-        }
-
-
-class DisplayFieldForm(forms.ModelForm):
-
-    class Meta:
-        model = DisplayField
-        widgets = {
-            'path': forms.HiddenInput(),
-            'path_verbose': forms.TextInput(attrs={'readonly': 'readonly'}),
-            'field_verbose': forms.TextInput(attrs={'readonly': 'readonly'}),
-            'field': forms.HiddenInput(),
-            'width': forms.TextInput(attrs={'class': 'small_input'}),
-            'total': forms.CheckboxInput(attrs={'class': 'small_input'}),
-            'sort': forms.TextInput(attrs={'class': 'small_input'}),
-        }
-
-
-class FilterFieldForm(forms.ModelForm):
-    class Meta:
-        model = FilterField
-        widgets = {
-            'path': forms.HiddenInput(),
-            'path_verbose': forms.TextInput(attrs={'readonly': 'readonly'}),
-            'field_verbose': forms.TextInput(attrs={'readonly': 'readonly'}),
-            'field': forms.HiddenInput(),
-            'filter_type': forms.Select(attrs={'onchange': 'check_filter_type(event.target)'})
-        }
-
-    def __init__(self, *args, **kwargs):
-        super(FilterFieldForm, self).__init__(*args, **kwargs)
-        # override the filter_value field with the models native ChoiceField
-        if self.instance.choices:
-            self.fields['filter_value'].widget = forms.Select(choices=self.instance.choices)
-        if 'DateField' in self.instance.field_verbose or 'DateTimeField' in self.instance.field_verbose:
-            widget = self.fields['filter_value'].widget
-            widget.attrs['class'] = 'datepicker'
-            widget.attrs['data-date-format'] = javascript_date_format(settings.DATE_FORMAT)
+from report_builder.utils import duplicate, get_model_from_path_string
+from report_builder.forms import ReportForm, ReportEditForm, DisplayFieldForm, FilterFieldForm
 
 
 class ReportCreateView(CreateView):
