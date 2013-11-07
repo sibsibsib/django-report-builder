@@ -1,39 +1,27 @@
 from django.contrib import admin
 from django.contrib.admin import SimpleListFilter
 from django.contrib.contenttypes.models import ContentType
-from django import forms
 from django.core.urlresolvers import reverse
 from django.http import HttpResponseRedirect
-from report_builder.models import DisplayField, Report, FilterField, Format
 from django.conf import settings
+
+from report_builder.models import DisplayField, Report, FilterField, Format
+from report_builder.forms import DisplayFieldAdminForm, FilterFieldAdminForm
+
 
 static_url = getattr(settings, 'STATIC_URL', '/static/')
 
 
-class DisplayFieldForm(forms.ModelForm):
-    position = forms.IntegerField(widget=forms.HiddenInput, required=False)
-
-    class Meta:
-        model = DisplayField
-
-
 class DisplayFieldInline(admin.StackedInline):
     model = DisplayField
-    form = DisplayFieldForm
+    form = DisplayFieldAdminForm
     extra = 0
     sortable_field_name = "position"
 
 
-class FilterFieldForm(forms.ModelForm):
-    position = forms.IntegerField(widget=forms.HiddenInput)
-
-    class Meta:
-        model = FilterField
-
-
 class FilterFieldInline(admin.StackedInline):
     model = FilterField
-    form = FilterFieldForm
+    form = FilterFieldAdminForm
     extra = 0
     sortable_field_name = "position"
 

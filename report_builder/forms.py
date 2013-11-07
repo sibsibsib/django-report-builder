@@ -44,6 +44,13 @@ class DisplayFieldForm(forms.ModelForm):
         }
 
 
+class DisplayFieldAdminForm(forms.ModelForm):
+    position = forms.IntegerField(widget=forms.HiddenInput, required=False)
+
+    class Meta:
+        model = DisplayField
+
+
 class FilterFieldForm(forms.ModelForm):
     class Meta:
         model = FilterField
@@ -64,3 +71,10 @@ class FilterFieldForm(forms.ModelForm):
             widget = self.fields['filter_value'].widget
             widget.attrs['class'] = 'datepicker'
             widget.attrs['data-date-format'] = javascript_date_format(settings.DATE_FORMAT)
+
+
+class FilterFieldAdminForm(forms.ModelForm):
+    position = forms.IntegerField(widget=forms.HiddenInput)
+
+    class Meta:
+        model = FilterField
