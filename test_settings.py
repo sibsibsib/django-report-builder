@@ -1,4 +1,6 @@
 import os
+
+SECRET_KEY = 'test'
 PROJECT_DIR = os.path.dirname(__file__)
 
 STATIC_URL = PROJECT_DIR + '/static/'
